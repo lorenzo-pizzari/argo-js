@@ -4,11 +4,13 @@ const UserSchema = require('../Schemas').user
 exports.plugin = {
   name: 'User API',
   version: '0.1.0',
+  dependencies: ['hapi-mongodb'],
   register: userModule
 }
-let users = {}
 
 async function userModule (server, options) {
+  const db = server.mongo.db
+  const Users = db.collection('users')
   server.route({
     method: 'POST',
     path: '/api/user',
@@ -23,12 +25,14 @@ async function userModule (server, options) {
       response: {modify: true}
     },
     handler: (request, h) => {
-      if (users[request.payload.email]) {
-        return Boom.forbidden('Email already registered!')
-      } else {
-        users[request.payload.email] = request.payload
-        return request.payload
-      }
+      return Users.findOne({email: request.payload.email})
+        .then(userObject => {
+          if (userObject) throw Boom.forbidden('User already exists')
+          return Users.insertOne(request.payload)
+        })
+        .then(() => {
+          return request.payload
+        })
     }
   })
 }

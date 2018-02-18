@@ -20,7 +20,13 @@ server.route({
 // Start the server
 async function start () {
   try {
-    await server.register([require('./api/user')])
+    await server.register([
+      {
+        plugin: require('hapi-mongodb'),
+        options: {url: 'mongodb://localhost:27017/argo', decorate: true}
+      },
+      require('./api/user')
+    ])
     await server.start()
   } catch (err) {
     console.log(err)

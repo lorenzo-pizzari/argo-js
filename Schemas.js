@@ -2,7 +2,7 @@ const Joi = require('joi')
 
 const user = Joi.object({
   email: Joi.string().email(),
-  password: Joi.string().strip()
+  password: Joi.string()
 })
 
 const client = Joi.object({

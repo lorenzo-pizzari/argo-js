@@ -25,6 +25,21 @@ async function start () {
         plugin: require('hapi-mongodb'),
         options: {url: 'mongodb://localhost:27017/argo', decorate: true}
       },
+      {
+        plugin: require('good'),
+        options: {
+          reporters: {
+            ConsoleReporter: [{
+              module: 'good-squeeze',
+              name: 'Squeeze',
+              args: [{log: '*', response: '*'}]
+            }, {
+              module: 'good-console',
+              args: [{format: 'YY/MM/DD-HH:mm:ss.SSS'}]
+            }, 'stdout']
+          }
+        }
+      },
       require('./api/user')
     ])
     await server.start()

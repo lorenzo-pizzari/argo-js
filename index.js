@@ -20,7 +20,7 @@ server.route({
 // Start the server
 async function start () {
   try {
-    // here insert await server.register()
+    await server.register([require('./api/user')])
     await server.start()
   } catch (err) {
     console.log(err)

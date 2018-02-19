@@ -23,6 +23,9 @@ const server = Hapi.server({
 server.route({
   method: 'GET',
   path: '/healthCheck',
+  options: {
+    auth: false
+  },
   handler: function (request, h) {
     return {status: 'ok'}
   }
@@ -51,6 +54,7 @@ async function start () {
           }
         }
       },
+      require('./auth/basic'),
       require('./api/user')
     ])
     await server.start()

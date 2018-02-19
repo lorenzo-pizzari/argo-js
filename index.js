@@ -5,7 +5,18 @@ const Hapi = require('hapi')
 // Create a server with a host and port
 const server = Hapi.server({
   host: 'localhost',
-  port: 8000
+  port: 8000,
+  debug: {
+    request: ['error']
+  },
+  routes: {
+    response: {
+      modify: true,
+      options: {
+        abortEarly: false
+      }
+    }
+  }
 })
 
 // Add the route

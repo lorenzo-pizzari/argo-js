@@ -1,4 +1,6 @@
 const Boom = require('boom')
+const Joi = require('joi')
+const bcrypt = require('bcryptjs')
 const UserSchema = require('../Schemas').user
 
 exports.plugin = {
@@ -19,19 +21,33 @@ async function userModule (server, options) {
       description: 'Create new User',
       validate: {
         query: false,
-        payload: UserSchema
-          .requiredKeys(['email', 'password'])
+        payload: {
+          email: Joi.string().email().required(),
+          password: Joi.string().required(),
+          name: Joi.string(),
+          surname: Joi.string()
+        }
       },
-      response: {modify: true}
+      response: {
+        schema: UserSchema
+      }
     },
     handler: (request, h) => {
       return Users.findOne({email: request.payload.email})
         .then(userObject => {
           if (userObject) throw Boom.forbidden('User already exists')
+          return bcrypt.genSalt(10)
+        }).then((salt) => {
+          return bcrypt.hash(request.payload.password, salt)
+        }).then((hash) => {
+          request.payload.password = hash
           return Users.insertOne(request.payload)
         })
-        .then(() => {
-          return request.payload
+        .then((insertResult) => {
+          return insertResult.ops[0]
+        })
+        .catch(error => {
+          return error
         })
     }
   })

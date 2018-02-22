@@ -29,7 +29,10 @@ async function userModule (server, options) {
         }
       },
       response: {
-        schema: UserSchema
+        status: {
+          200: UserSchema,
+          403: {'statusCode': 403, 'error': 'Forbidden', 'message': 'User already exists'}
+        }
       }
     },
     handler: (request, h) => {

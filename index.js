@@ -2,13 +2,9 @@
 
 const Hapi = require('hapi')
 
-// Create a server with a host and port
-const server = Hapi.server({
+let hapiOptions = {
   host: 'localhost',
   port: 8000,
-  debug: {
-    request: ['error']
-  },
   routes: {
     response: {
       modify: true,
@@ -17,7 +13,16 @@ const server = Hapi.server({
       }
     }
   }
-})
+}
+
+if (process.env.NODE_ENV === 'debug') {
+  hapiOptions.debug = {
+    request: ['error']
+  }
+}
+
+// Create a server with a host and port
+const server = Hapi.server(hapiOptions)
 
 // Add the route
 server.route({
@@ -67,5 +72,7 @@ async function start () {
 }
 
 start()
+
+console.log(process.env.NODE_ENV)
 
 exports.server = server

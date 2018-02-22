@@ -54,9 +54,9 @@ async function start () {
           }
         }
       },
-      require('./auth/basic'),
-      require('./api/user')
+      require('./auth/basic')
     ])
+    await server.register(require('./api/user'))
     await server.start()
   } catch (err) {
     console.log(err)
@@ -67,3 +67,5 @@ async function start () {
 }
 
 start()
+
+exports.server = server

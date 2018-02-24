@@ -1,12 +1,12 @@
 const Boom = require('boom')
 const Joi = require('joi')
 const bcrypt = require('bcryptjs')
-const UserSchema = require('../Schemas').user
+const Schemas = require('../Schemas')
 
 exports.plugin = {
   name: 'User API',
   version: '0.1.0',
-  dependencies: ['hapi-mongodb'],
+  dependencies: ['hapi-mongodb', 'basic-authentication'],
   register: userModule
 }
 
@@ -28,12 +28,7 @@ async function userModule (server, options) {
           surname: Joi.string()
         }
       },
-      response: {
-        status: {
-          200: UserSchema,
-          403: {'statusCode': 403, 'error': 'Forbidden', 'message': 'User already exists'}
-        }
-      }
+      response: {status: {200: Schemas.user, 403: Schemas.error}}
     },
     handler: (request, h) => {
       return Users.findOne({email: request.payload.email})
@@ -52,6 +47,17 @@ async function userModule (server, options) {
         .catch(error => {
           return error
         })
+    }
+  })
+  server.route({
+    method: 'GET',
+    path: '/api/user',
+    options: {
+      validate: {query: false, payload: false},
+      response: {status: {200: Schemas.user, 401: Schemas.error}}
+    },
+    handler: (request, h) => {
+      return request.auth.credentials
     }
   })
 }

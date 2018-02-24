@@ -29,7 +29,14 @@ const token = Joi.object({
   client_id: Joi.reach(client, 'id')
 })
 
+const error = {
+  'statusCode': Joi.number(),
+  'error': Joi.string(),
+  'message': Joi.string()
+}
+
 exports.user = user
 exports.client = client
 exports.code = code
 exports.token = token
+exports.error = error

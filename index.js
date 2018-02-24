@@ -54,7 +54,7 @@ async function start () {
               args: [{log: '*', response: '*'}]
             }, {
               module: 'good-console',
-              args: [{format: 'YY/MM/DD-HH:mm:ss.SSS'}]
+              args: [{format: 'YYYY-MM-DDTHH:mm:ssZ'}]
             }, 'stdout']
           }
         }
@@ -72,7 +72,5 @@ async function start () {
 }
 
 start()
-
-console.log(process.env.NODE_ENV)
 
 exports.server = server

@@ -61,7 +61,16 @@ async function start () {
       },
       require('inert'),
       require('vision'),
-      require('hapi-swagger'),
+      {
+        plugin: require('hapi-swagger'),
+        options: {
+          pathPrefixSize: 2,
+          info: {
+            title: 'Argo.js Identity Provider',
+            version: require('./package').version
+          }
+        }
+      },
       require('./auth/basic')
     ])
     await server.register(require('./api/user'))

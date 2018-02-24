@@ -28,7 +28,10 @@
     "hapi": "^17.2.0",
     "hapi-auth-basic": "^5.0.0",
     "hapi-mongodb": "^7.1.0",
+    "hapi-swagger": "^9.1.1",
+    "inert": "^5.1.0",
     "joi": "^13.1.2",
-    "lab": "^15.2.2"
+    "lab": "^15.2.2",
+    "vision": "^5.3.1"
   }
 }

@@ -54,6 +54,7 @@ async function userModule (server, options) {
     method: 'GET',
     path: '/api/user',
     options: {
+      tags: ['api'],
       validate: {query: false, payload: false},
       response: {status: {200: Schemas.user, 401: Schemas.error}}
     },

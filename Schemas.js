@@ -1,9 +1,9 @@
 const Joi = require('joi')
 
 const user = Joi.object({
-  _id: [Joi.string().regex(/^[0-9a-fA-F]{24}$/), Joi.object()],
+  _id: [Joi.string().hex().length(24), Joi.object()],
   email: Joi.string().email(),
-  password: Joi.string().strip(),
+  password: Joi.string(),
   name: Joi.string(),
   surname: Joi.string()
 }).label('User')

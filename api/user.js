@@ -1,5 +1,4 @@
 const Boom = require('boom')
-const Joi = require('joi')
 const bcrypt = require('bcryptjs')
 const Schemas = require('../Schemas')
 
@@ -13,23 +12,21 @@ exports.plugin = {
 async function userModule (server, options) {
   const db = server.mongo.db
   const Users = db.collection('users')
+
   server.route({
     method: 'POST',
     path: '/api/user',
     options: {
       auth: false,
-      tags: ['api'],
+      tags: ['api', 'user'],
       description: 'Create new User',
       validate: {
         query: false,
-        payload: Joi.object({
-          email: Joi.string().email().required(),
-          password: Joi.string().required(),
-          name: Joi.string(),
-          surname: Joi.string()
-        }).label('UserInput')
+        payload: Schemas.user
+          .requiredKeys(['email', 'password'])
+          .forbiddenKeys(['_id']).label('RegistrationForm')
       },
-      response: {status: {200: Schemas.user, 403: Schemas.error}}
+      response: {status: {200: Schemas.user.forbiddenKeys(['password']), 403: Schemas.error}}
     },
     handler: (request, h) => {
       return Users.findOne({email: request.payload.email})
@@ -43,6 +40,7 @@ async function userModule (server, options) {
           return Users.insertOne(request.payload)
         })
         .then((insertResult) => {
+          delete insertResult.ops[0].password
           return insertResult.ops[0]
         })
         .catch(error => {
@@ -50,16 +48,53 @@ async function userModule (server, options) {
         })
     }
   })
+
   server.route({
     method: 'GET',
     path: '/api/user',
     options: {
-      tags: ['api'],
+      tags: ['api', 'user'],
       validate: {query: false, payload: false},
-      response: {status: {200: Schemas.user, 401: Schemas.error}}
+      response: {status: {200: Schemas.user.forbiddenKeys(['password'])}}
     },
     handler: (request, h) => {
+      delete request.auth.credentials.password
       return request.auth.credentials
+    }
+  })
+
+  server.route({
+    method: 'PUT',
+    path: '/api/user',
+    options: {
+      tags: ['api', 'user'],
+      validate: {
+        query: false,
+        payload: Schemas.user.forbiddenKeys(['_id', 'password']).min(1)
+      },
+      response: {status: {200: Schemas.user.forbiddenKeys(['password'])}}
+    },
+    handler: async (request, h) => {
+      const updateResult = await Users.findOneAndUpdate(
+        {_id: request.auth.credentials._id},
+        {$set: request.payload},
+        {projection: {password: 0}})
+      return updateResult.value
+    }
+  })
+
+  server.route({
+    method: 'DELETE',
+    path: '/api/user',
+    options: {
+      tags: ['api', 'user'],
+      validate: {query: false, payload: false}
+    },
+    handler: async (request, h) => {
+      Users.deleteOne({_id: request.auth.credentials._id})
+      const response = h.response()
+      response.statusCode = 204
+      return response
     }
   })
 }

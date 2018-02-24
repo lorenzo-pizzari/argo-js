@@ -21,6 +21,10 @@ if (process.env.NODE_ENV === 'debug') {
   }
 }
 
+if (process.env.NODE_ENV === 'test') {
+  hapiOptions.port = 8080
+}
+
 // Create a server with a host and port
 const server = Hapi.server(hapiOptions)
 

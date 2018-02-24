@@ -32,3 +32,5 @@ async function validate (request, username, password) {
       return {isValid: false}
     })
 }
+
+exports.validate = validate

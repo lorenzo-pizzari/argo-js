@@ -2,6 +2,6 @@ module.exports = {
   coverage: true,
   colors: true,
   verbose: true,
-  threshold: 80,
+  threshold: 90,
   lint: true,
 }

@@ -4,7 +4,7 @@ const bcrypt = require('bcryptjs')
 const Schemas = require('../Schemas')
 
 exports.plugin = {
-  name: 'User API',
+  name: 'user-api',
   version: '0.1.0',
   dependencies: ['hapi-mongodb', 'basic-authentication'],
   register: userModule
@@ -18,15 +18,16 @@ async function userModule (server, options) {
     path: '/api/user',
     options: {
       auth: false,
+      tags: ['api'],
       description: 'Create new User',
       validate: {
         query: false,
-        payload: {
+        payload: Joi.object({
           email: Joi.string().email().required(),
           password: Joi.string().required(),
           name: Joi.string(),
           surname: Joi.string()
-        }
+        }).label('UserInput')
       },
       response: {status: {200: Schemas.user, 403: Schemas.error}}
     },

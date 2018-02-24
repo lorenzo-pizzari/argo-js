@@ -59,6 +59,9 @@ async function start () {
           }
         }
       },
+      require('inert'),
+      require('vision'),
+      require('hapi-swagger'),
       require('./auth/basic')
     ])
     await server.register(require('./api/user'))

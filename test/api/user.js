@@ -16,6 +16,7 @@ let injectConf = {
 lab.experiment('/api/user', () => {
   lab.before(() => {
     return new Promise((resolve, reject) => {
+      if (server.plugins['user-api']) return resolve()
       server.events.on('start', () => {
         resolve()
       })

@@ -6,7 +6,7 @@ const user = Joi.object({
   password: Joi.string().strip(),
   name: Joi.string(),
   surname: Joi.string()
-})
+}).label('User')
 
 const client = Joi.object({
   id: Joi.string().length(16),
@@ -29,11 +29,11 @@ const token = Joi.object({
   client_id: Joi.reach(client, 'id')
 })
 
-const error = {
+const error = Joi.object({
   'statusCode': Joi.number(),
   'error': Joi.string(),
   'message': Joi.string()
-}
+}).label('Error')
 
 exports.user = user
 exports.client = client

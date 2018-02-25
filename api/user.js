@@ -70,16 +70,18 @@ async function userModule (server, options) {
       tags: ['api', 'user'],
       validate: {
         query: false,
-        payload: Schemas.user.forbiddenKeys(['_id', 'password']).min(1)
+        payload: Schemas.user.forbiddenKeys(['_id', 'password', 'email']).min(1)
       },
       response: {status: {200: Schemas.user.forbiddenKeys(['password'])}}
     },
     handler: async (request, h) => {
-      const updateResult = await Users.findOneAndUpdate(
+      await Users.findOneAndUpdate(
         {_id: request.auth.credentials._id},
-        {$set: request.payload},
-        {projection: {password: 0}})
-      return updateResult.value
+        {$set: request.payload})
+      return Users.findOne(
+        {_id: request.auth.credentials._id},
+        {password: 0}
+      )
     }
   })
 

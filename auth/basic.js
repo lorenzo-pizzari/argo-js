@@ -26,7 +26,7 @@ async function validate (request, username, password) {
       return bcrypt.compare(password, user.password)
     })
     .then(isValid => {
-      return {isValid, credentials}
+      return {isValid, credentials: isValid ? credentials : undefined}
     })
     .catch(() => {
       return {isValid: false}

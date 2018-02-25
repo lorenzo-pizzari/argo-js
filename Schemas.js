@@ -9,24 +9,24 @@ const user = Joi.object({
 }).label('User')
 
 const client = Joi.object({
-  id: Joi.string().length(16),
+  _id: [Joi.string().hex().length(24), Joi.object()],
   secret: Joi.string().length(32),
   name: Joi.string(),
-  user_email: Joi.reach(user, 'email'),
+  user_id: Joi.reach(user, '_id'),
   redirect_uri: Joi.string().uri({scheme: ['http', 'https']})
-})
+}).label('Client')
 
 const code = Joi.object({
   id: Joi.string(),
   value: Joi.string().length(16),
-  client_id: Joi.reach(client, 'id')
+  client_id: Joi.reach(client, '_id')
 })
 
 const token = Joi.object({
   id: Joi.string(),
   value: Joi.string(),
   user_email: Joi.reach(user, 'email'),
-  client_id: Joi.reach(client, 'id')
+  client_id: Joi.reach(client, '_id')
 })
 
 const error = Joi.object({

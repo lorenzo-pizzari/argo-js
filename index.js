@@ -77,7 +77,10 @@ async function start () {
       },
       require('./auth/basic')
     ])
-    await server.register(require('./api/user'))
+    await server.register([
+      require('./api/user'),
+      require('./api/client')
+    ])
     await server.start()
   } catch (err) {
     console.log(err)

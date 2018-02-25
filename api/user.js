@@ -90,7 +90,8 @@ async function userModule (server, options) {
     path: '/api/user',
     options: {
       tags: ['api', 'user'],
-      validate: {query: false, payload: false}
+      validate: {query: false, payload: false},
+      response: {emptyStatusCode: 204}
     },
     handler: async (request, h) => {
       Users.deleteOne({_id: request.auth.credentials._id})

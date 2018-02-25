@@ -14,14 +14,6 @@ let injectConf = {
 }
 
 lab.experiment('/api/user', () => {
-  lab.before(() => {
-    return new Promise((resolve, reject) => {
-      if (server.plugins['user-api']) return resolve()
-      server.events.on('start', () => {
-        resolve()
-      })
-    })
-  })
   lab.test('should not POST without payload', async () => {
     const response = await server.inject(injectConf)
     expect(response.statusCode).to.be.equal(400)

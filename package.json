@@ -1,6 +1,6 @@
 {
   "name": "argojs",
-  "version": "0.0.1",
+  "version": "0.3.0",
   "description": "A Nodejs Identity Provider",
   "main": "index.js",
   "scripts": {
@@ -11,15 +11,15 @@
   "author": "Lorenzo Pizzari <lorenzo@pizzari.it>",
   "license": "MIT",
   "devDependencies": {
-    "eslint": "^4.18.0",
-    "eslint-config-standard": "^11.0.0-beta.0",
-    "eslint-plugin-import": "^2.8.0",
-    "eslint-plugin-node": "^6.0.0",
+    "eslint": "^4.18.1",
+    "eslint-config-standard": "^11.0.0",
+    "eslint-plugin-import": "^2.9.0",
+    "eslint-plugin-node": "^6.0.1",
     "eslint-plugin-promise": "^3.6.0",
     "eslint-plugin-standard": "^3.0.1"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
+    "bcrypt": "^1.0.3",
     "boom": "^7.1.1",
     "code": "^5.2.0",
     "good": "^8.1.0",
@@ -31,7 +31,7 @@
     "hapi-swagger": "^9.1.1",
     "inert": "^5.1.0",
     "joi": "^13.1.2",
-    "lab": "^15.2.2",
+    "lab": "^15.3.0",
     "randomstring": "^1.1.5",
     "vision": "^5.3.1"
   }

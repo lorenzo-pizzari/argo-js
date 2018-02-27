@@ -1,4 +1,4 @@
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcrypt')
 const Boom = require('boom')
 const Basic = require('hapi-auth-basic')
 

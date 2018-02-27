@@ -1,10 +1,10 @@
 const Boom = require('boom')
-const bcrypt = require('bcryptjs')
+const bcrypt = require('bcrypt')
 const Schemas = require('../Schemas')
 
 exports.plugin = {
   name: 'user-api',
-  version: '0.1.0',
+  version: '1.0.0',
   dependencies: ['hapi-mongodb', 'basic-authentication'],
   register: userModule
 }

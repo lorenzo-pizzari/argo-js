@@ -40,6 +40,17 @@ server.route({
   }
 })
 
+server.route({
+  method: 'GET',
+  path: '/',
+  options: {
+    auth: false
+  },
+  handler: function (request, h) {
+    return h.view('index')
+  }
+})
+
 // Start the server
 async function start () {
   try {
@@ -81,6 +92,15 @@ async function start () {
       require('./api/user'),
       require('./api/client')
     ])
+    server.views({
+      engines: {
+        jsx: require('hapijs-react-views')({jsx: {haromny: true}}),
+        js: require('hapijs-react-views')({jsx: {haromny: true}})
+      },
+      defaultExtension: 'jsx',
+      relativeTo: __dirname,
+      path: 'views'
+    })
     await server.start()
   } catch (err) {
     console.log(err)

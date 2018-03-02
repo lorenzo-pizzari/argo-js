@@ -1,4 +1,4 @@
-coverage.html
+public/coverage.html
 # Created by .ignore support plugin (hsz.mobi)
 logs
 *.log
@@ -10,19 +10,15 @@ pids
 *.seed
 *.pid.lock
 lib-cov
-coverage
-.nyc_output
 .grunt
 bower_components
 .lock-wscript
 build/Release
 node_modules/
 jspm_packages/
-typings/
 .npm
 .eslintcache
 .node_repl_history
-*.tgz
 .yarn-integrity
 .env
 .next
@@ -42,7 +38,6 @@ cmake-build-debug/
 cmake-build-release/
 .idea/**/mongoSettings.xml
 *.iws
-out/
 .idea_modules/
 atlassian-ide-plugin.xml
 .idea/replstate.xml

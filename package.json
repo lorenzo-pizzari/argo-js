@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "test": "node node_modules/lab/bin/lab",
-    "test-cov-html": "lab -r html -o coverage.html"
+    "test-cov-html": "lab -r html -o public/coverage.html"
   },
   "author": "Lorenzo Pizzari <lorenzo@pizzari.it>",
   "license": "MIT",

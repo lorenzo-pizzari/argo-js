@@ -5,7 +5,9 @@ class HelloReact extends React.Component {
   render () {
     return (
       <DefaultLayout>
-        <h1>Hello React!</h1>
+        <div className='container'>
+          <h1 className='text-center'>Hello React!</h1>
+        </div>
       </DefaultLayout>
     )
   }

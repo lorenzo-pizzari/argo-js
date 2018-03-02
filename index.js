@@ -1,6 +1,7 @@
 'use strict'
 
 const Hapi = require('hapi')
+const Path = require('path')
 
 let hapiOptions = {
   host: 'localhost',
@@ -100,6 +101,19 @@ async function start () {
       defaultExtension: 'jsx',
       relativeTo: __dirname,
       path: 'views'
+    })
+    server.path(Path.join(__dirname, 'public'))
+    server.route({
+      method: 'GET',
+      path: '/{param*}',
+      options: {auth: false},
+      handler: {
+        directory: {
+          path: '.',
+          redirectToSlash: true,
+          index: true
+        }
+      }
     })
     await server.start()
   } catch (err) {

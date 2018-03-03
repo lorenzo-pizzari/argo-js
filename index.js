@@ -41,17 +41,6 @@ server.route({
   }
 })
 
-server.route({
-  method: 'GET',
-  path: '/',
-  options: {
-    auth: false
-  },
-  handler: function (request, h) {
-    return h.view('index')
-  }
-})
-
 // Start the server
 async function start () {
   try {
@@ -87,7 +76,8 @@ async function start () {
           }
         }
       },
-      require('./auth/basic')
+      require('./auth/basic'),
+      require('./auth/cookie')
     ])
     await server.register([
       require('./api/user'),
@@ -113,6 +103,17 @@ async function start () {
           redirectToSlash: true,
           index: true
         }
+      }
+    })
+
+    server.route({
+      method: 'GET',
+      path: '/',
+      options: {
+        auth: 'session'
+      },
+      handler: function (request, h) {
+        return h.view('index')
       }
     })
     await server.start()

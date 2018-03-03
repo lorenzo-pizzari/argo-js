@@ -2,14 +2,19 @@ const React = require('react')
 
 class DefaultLayout extends React.Component {
   render () {
+    let pageStyle
+    if (this.props.pageStyle) {
+      pageStyle = <link rel='stylesheet' href={'css/' + this.props.pageStyle} />
+    }
     return (
       <html>
         <head>
           <meta charSet='utf-8' />
           <meta name='viewport' content='width=device-width, initial-scale=1, shrink-to-fit=no' />
-          <title>Argo.js</title>
+          <title>{'Argo.js ' + this.props.title}</title>
           <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css' integrity='sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm' crossOrigin='anonymous' />
           <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css' />
+          {pageStyle}
         </head>
         <body>
           {this.props.children}

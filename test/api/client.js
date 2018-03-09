@@ -71,7 +71,7 @@ lab.experiment('/api/client', () => {
   })
 
   lab.after(() => {
-    server.mongo.db.collection('users').deleteMany({})
+    server.mongo.db.collection('users').deleteMany({email: 'test@test.it'})
     server.mongo.db.collection('clients').deleteMany({})
   })
 })

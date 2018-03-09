@@ -85,12 +85,13 @@ async function start () {
     ])
     server.views({
       engines: {
-        jsx: require('hapijs-react-views')({jsx: {haromny: true}}),
-        js: require('hapijs-react-views')({jsx: {haromny: true}})
+        html: require('handlebars')
       },
-      defaultExtension: 'jsx',
+      defaultExtension: 'html',
       relativeTo: __dirname,
-      path: 'views'
+      path: 'views',
+      layoutPath: 'views/layout',
+      layout: 'default'
     })
     server.path(Path.join(__dirname, 'public'))
     server.route({
@@ -113,7 +114,7 @@ async function start () {
         auth: 'session'
       },
       handler: function (request, h) {
-        return h.view('index')
+        return h.view('index', {title: '| Home', name: request.auth.credentials.name})
       }
     })
     await server.start()

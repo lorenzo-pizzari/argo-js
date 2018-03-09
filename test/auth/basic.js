@@ -38,6 +38,6 @@ lab.experiment('Basic Authentication', () => {
   })
 
   lab.after(() => {
-    server.mongo.db.collection('users').deleteMany({})
+    server.mongo.db.collection('users').deleteMany({email: 'auth@test.it'})
   })
 })

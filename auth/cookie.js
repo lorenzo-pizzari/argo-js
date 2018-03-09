@@ -22,9 +22,8 @@ async function cookieAuthentication (server, options) {
       const out = {
         valid: !!cached
       }
-
       if (out.valid) {
-        out.credentials = cached.account
+        out.credentials = cached.credentials
       }
 
       return out
@@ -42,7 +41,7 @@ async function cookieAuthentication (server, options) {
       if (request.auth.isAuthenticated) {
         return h.redirect(request.query.next | '/')
       }
-      return h.view('login', {location: request.raw.req.url, status: request.query.status})
+      return h.view('login', {title: '| Login', location: request.raw.req.url, status: request.query.status})
     }
   })
 
@@ -57,7 +56,9 @@ async function cookieAuthentication (server, options) {
       // Check login
       const login = await require('./basic').validate(request, request.payload.email, request.payload.password)
       if (!login.isValid) {
-        return h.redirect(request.raw.req.url + '&status=Unauthorized')
+        let status
+        request.query.status ? status = '' : status = '&status=Unauthorized'
+        return h.redirect(request.raw.req.url + status)
       } else {
         // Set chache/cookie stuff
         await request.server.app.cache.set(login.credentials._id.toString(), {credentials: login.credentials}, 0)

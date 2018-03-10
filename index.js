@@ -4,7 +4,7 @@ const Hapi = require('hapi')
 const Path = require('path')
 
 let hapiOptions = {
-  host: 'localhost',
+  host: '0.0.0.0',
   port: 8000,
   routes: {
     response: {
@@ -81,7 +81,8 @@ async function start () {
     ])
     await server.register([
       require('./api/user'),
-      require('./api/client')
+      require('./api/client'),
+      require('./api/oauth2')
     ])
     server.views({
       engines: {

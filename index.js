@@ -77,7 +77,8 @@ async function start () {
         }
       },
       require('./auth/basic'),
-      require('./auth/cookie')
+      require('./auth/cookie'),
+      require('./auth/client')
     ])
     await server.register([
       require('./api/user'),

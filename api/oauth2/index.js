@@ -83,10 +83,10 @@ async function OAuth2Module (server, options) {
         return h.redirect(redirection)
       }
       const code = randomstring()
-      await request.server.app.cache.set(code,{
+      await request.server.app.cache.set(code, {
         client_id: new ObjectID(request.query.client_id),
         user_id: new ObjectID(request.auth.credentials._id)
-      });
+      })
       let successUrl = request.query.redirect_uri + '?code=' + code
       if (request.query.state) successUrl += '&state=' + request.query.state
       return h.redirect(successUrl)

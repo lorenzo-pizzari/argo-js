@@ -11,7 +11,7 @@ let testUser = {
 }
 let testClient
 
-lab.experiment('Basic Authentication', () => {
+lab.experiment('Client Authentication', () => {
   lab.before(async () => {
     const testUserResponse = await server.inject({
       method: 'POST',

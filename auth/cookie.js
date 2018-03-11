@@ -1,3 +1,5 @@
+const Joi = require('joi')
+
 exports.plugin = {
   name: 'cookie-authentication',
   version: '0.0.1',
@@ -8,26 +10,15 @@ exports.plugin = {
 async function cookieAuthentication (server, options) {
   await server.register(require('hapi-auth-cookie'))
 
-  const cache = server.cache({segment: 'sessions', expiresIn: 3 * 24 * 60 * 60 * 1000})
-  server.app.cache = cache
+  server.app.cache = server.cache({segment: 'sessions', expiresIn: 3 * 24 * 60 * 60 * 1000})
 
   server.auth.strategy('session', 'cookie', {
-    password: 'password-should-be-32-characters',
+    password: 'bpiSlGrKnR9qHSZ41PbC6gITRwnAR4A2',
     cookie: 'sid',
     redirectTo: '/login',
     isSecure: false,
     appendNext: true,
-    validateFunc: async (request, session) => {
-      const cached = await cache.get(session.sid)
-      const out = {
-        valid: !!cached
-      }
-      if (out.valid) {
-        out.credentials = cached.credentials
-      }
-
-      return out
-    }
+    validateFunc: validate
   })
 
   server.route({
@@ -39,7 +30,7 @@ async function cookieAuthentication (server, options) {
     },
     handler: (request, h) => {
       if (request.auth.isAuthenticated) {
-        return h.redirect(request.query.next | '/')
+        return h.redirect(request.query.next || '/')
       }
       return h.view('login', {title: '| Login', location: request.raw.req.url, status: request.query.status})
     }
@@ -50,7 +41,13 @@ async function cookieAuthentication (server, options) {
     path: '/login',
     options: {
       auth: false,
-      plugins: {'hapi-auth-cookie': {redirectTo: false}}
+      plugins: {'hapi-auth-cookie': {redirectTo: false}},
+      validate: {
+        payload: {
+          email: Joi.string().email().required(),
+          password: Joi.string().required()
+        }
+      }
     },
     handler: async (request, h) => {
       // Check login
@@ -63,11 +60,22 @@ async function cookieAuthentication (server, options) {
         // Set chache/cookie stuff
         await request.server.app.cache.set(login.credentials._id.toString(), {credentials: login.credentials}, 0)
         request.cookieAuth.set({sid: login.credentials._id.toString()})
-        // Decide where redirect user
-        let landingTarget
-        request.query.next ? landingTarget = request.query.next : landingTarget = '/'
-        return h.redirect(landingTarget)
+        return h.redirect(request.query.next || '/')
       }
     }
   })
 }
+
+async function validate (request, session) {
+  const cached = await request.server.app.cache.get(session.sid)
+  const out = {
+    valid: !!cached
+  }
+  if (out.valid) {
+    out.credentials = cached.credentials
+  }
+
+  return out
+}
+
+exports.validate = validate

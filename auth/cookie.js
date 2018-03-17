@@ -1,4 +1,5 @@
 const Joi = require('joi')
+const URLSearchParams = require('url').URLSearchParams
 
 exports.plugin = {
   name: 'cookie-authentication',
@@ -53,9 +54,9 @@ async function cookieAuthentication (server, options) {
       // Check login
       const login = await require('./basic').validate(request, request.payload.email, request.payload.password)
       if (!login.isValid) {
-        let status
-        request.query.status ? status = '' : status = '&status=Unauthorized'
-        return h.redirect(request.raw.req.url + status)
+        const redirectURL = new URLSearchParams(request.url.search)
+        if (!redirectURL.get('status')) redirectURL.append('status', 'Unauthorized')
+        return h.redirect(request.url.pathname + '?' + redirectURL.toString())
       } else {
         // Set chache/cookie stuff
         await request.server.app.cache.set(login.credentials._id.toString(), {credentials: login.credentials}, 0)

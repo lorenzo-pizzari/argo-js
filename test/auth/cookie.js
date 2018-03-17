@@ -34,7 +34,18 @@ lab.experiment('Session Authentication', () => {
       payload: {email: 'wrong@email.com', password: 'password'}
     })
     expect(response.statusCode).to.be.equal(302)
-    expect(response.headers.location).to.be.equal('/login&status=Unauthorized')
+    expect(response.headers.location).to.be.equal('/login?status=Unauthorized')
+    expect(response.headers['set-cookie']).to.be.undefined()
+  })
+
+  lab.test('POST /login should not duplicate status query param', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/login?status=Unauthorized',
+      payload: {email: 'wrong@email.com', password: 'password'}
+    })
+    expect(response.statusCode).to.be.equal(302)
+    expect(response.headers.location).to.be.equal('/login?status=Unauthorized')
     expect(response.headers['set-cookie']).to.be.undefined()
   })
 
@@ -49,10 +60,27 @@ lab.experiment('Session Authentication', () => {
     expect(response.headers['set-cookie']).to.be.array()
   })
 
+  lab.test('POST /login should redirect to next if is set', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/login?next=/nextPage',
+      payload: testUser
+    })
+    expect(response.statusCode).to.be.equal(302)
+    expect(response.headers.location).to.be.equal('/nextPage')
+    expect(response.headers['set-cookie']).to.be.array()
+  })
+
   lab.test('GET /login should redirect to home if is authenticated', async () => {
     const response = await server.inject({method: 'GET', url: '/login', credentials: testUser})
     expect(response.statusCode).to.be.equal(302)
     expect(response.headers.location).to.be.equal('/')
+  })
+
+  lab.test('GET /login should redirect to next if is set', async () => {
+    const response = await server.inject({method: 'GET', url: '/login?next=/nextPage', credentials: testUser})
+    expect(response.statusCode).to.be.equal(302)
+    expect(response.headers.location).to.be.equal('/nextPage')
   })
 
   lab.test('validation function should fail with wrong token', async () => {

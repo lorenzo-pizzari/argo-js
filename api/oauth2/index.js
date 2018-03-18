@@ -133,15 +133,23 @@ async function OAuth2Module (server, options) {
       tags: ['api', 'oauth2'],
       validate: {
         query: false,
-        payload: {
-          grant_type: Joi.string().only(['authorization_code']).required(),
-          code: Joi.string().required(),
-          redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
-          client_id: Joi.reach(Schemas.client, '_id').required()
-        },
+        payload: Joi.alternatives().when(Joi.object({grant_type: 'authorization_code'}).unknown(), {
+          then: Joi.object({
+            grant_type: Joi.string().only(['authorization_code']).required(),
+            code: Joi.string().required(),
+            redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
+            client_id: Joi.reach(Schemas.client, '_id').required()
+          }),
+          otherwise: Joi.object({
+            grant_type: Joi.string().only(['password']).required(),
+            username: Joi.reach(Schemas.user, 'email').required(),
+            password: Joi.reach(Schemas.user, 'password').required()
+          })
+        }),
         failAction: (request, h) => {
           let error = 'invalid_request'
-          if (request.payload.grant_type !== 'authorization_code') error = 'unsupported_grant_type'
+          if (request.payload.grant_type !== 'authorization_code' ||
+            request.payload.grant_type !== 'password') error = 'unsupported_grant_type'
           const response = h.response({error: error})
           response.statusCode = 400
           return response.takeover()
@@ -149,18 +157,27 @@ async function OAuth2Module (server, options) {
       }
     },
     handler: async (request, h) => {
-      let code = await request.server.app.cache.get(request.payload.code)
-      if (!code || code.client_id !== request.auth.credentials._id.toString()) {
-        const response = h.response({error: 'invalid_grant'})
-        response.statusCode = 400
-        return response
-      }
       if (request.payload.redirect_uri !== request.auth.credentials.redirect_uri) {
         const response = h.response({error: 'invalid_request'})
         response.statusCode = 400
         return response
       }
-      const tokenInsertResult = await tokenHandler(code.client_id, code.user_id)
+      let tokenInsertResult
+      switch (request.payload.grant_type) {
+        case 'authorization_code':
+          let code = await request.server.app.cache.get(request.payload.code)
+          if (!code || code.client_id !== request.auth.credentials._id.toString()) {
+            const response = h.response({error: 'invalid_grant'})
+            response.statusCode = 400
+            return response
+          }
+          tokenInsertResult = await tokenHandler(code.client_id, code.user_id)
+          break
+        case 'password':
+          // TODO Check username and password
+          // TODO Call tokenHandler w/ user._id as client_id
+          break
+      }
       // TODO Set Token Expire
       return {access_token: tokenInsertResult.ops[0].token, token_type: 'bearer', expires_in: 0}
     }

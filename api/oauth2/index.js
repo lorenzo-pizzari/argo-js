@@ -40,6 +40,14 @@ async function OAuth2Module (server, options) {
     })
   }
 
+  const authorizationQueryValidation = {
+    response_type: Joi.string().only(['code', 'token']).required(),
+    client_id: Joi.reach(Schemas.client, '_id').required(),
+    redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
+    scope: Joi.string(),
+    state: Joi.string()
+  }
+
   server.route({
     method: 'GET',
     path: '/api/oauth2/authorize',
@@ -48,35 +56,25 @@ async function OAuth2Module (server, options) {
       tags: ['api', 'oauth2'],
       validate: {
         payload: false,
-        query: {
-          response_type: Joi.string().only(['code']).required(),
-          client_id: Joi.reach(Schemas.client, '_id').required(),
-          redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
-          scope: Joi.string(),
-          state: Joi.string()
-        },
+        query: authorizationQueryValidation,
         failAction: oauthFailAction
       }
     },
     handler: async (request, h) => {
-      switch (request.query.response_type) {
-        case 'code':
-          const client = await db.collection('clients').findOne({_id: new ObjectID(request.query.client_id)})
-          if (!client) {
-            let redirection = new URL(request.query.redirect_uri)
-            redirection.searchParams.append('error', 'invalid_request')
-            if (request.query.state) redirection.searchParams.append('state', request.query.state)
-            return h.redirect(redirection.toString())
-          }
-          if (client.redirect_uri !== request.query.redirect_uri) {
-            let redirection = new URL(request.query.redirect_uri)
-            redirection.searchParams.append('error', 'invalid_request')
-            if (request.query.state) redirection.searchParams.append('state', request.query.state)
-            return h.redirect(redirection.toString())
-          }
-
-          return h.view('oauth_decision', {query: request.query, credentials: request.auth.credentials, client: client})
+      const client = await db.collection('clients').findOne({_id: new ObjectID(request.query.client_id)})
+      if (!client) {
+        let redirection = new URL(request.query.redirect_uri)
+        redirection.searchParams.append('error', 'invalid_request')
+        if (request.query.state) redirection.searchParams.append('state', request.query.state)
+        return h.redirect(redirection.toString())
       }
+      if (client.redirect_uri !== request.query.redirect_uri) {
+        let redirection = new URL(request.query.redirect_uri)
+        redirection.searchParams.append('error', 'invalid_request')
+        if (request.query.state) redirection.searchParams.append('state', request.query.state)
+        return h.redirect(redirection.toString())
+      }
+      return h.view('oauth_decision', {query: request.query, credentials: request.auth.credentials, client: client})
     }
   })
 
@@ -89,13 +87,7 @@ async function OAuth2Module (server, options) {
         payload: {
           decision: Joi.string().only(['allow', 'deny'])
         },
-        query: {
-          response_type: Joi.string().only(['code']).required(),
-          client_id: Joi.reach(Schemas.client, '_id').required(),
-          redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
-          scope: Joi.string(),
-          state: Joi.string()
-        },
+        query: authorizationQueryValidation,
         failAction: oauthFailAction
       }
     },
@@ -113,13 +105,21 @@ async function OAuth2Module (server, options) {
         if (request.query.state) redirection.searchParams.append('state', request.query.state)
         return h.redirect(redirection.toString())
       }
-      const code = randomstring()
-      await request.server.app.cache.set(code, {
-        client_id: request.query.client_id,
-        user_id: request.auth.credentials._id
-      })
       let successUrl = new URL(request.query.redirect_uri)
-      successUrl.searchParams.set('code', code)
+      switch (request.query.response_type) {
+        case 'code':
+          const code = randomstring()
+          await request.server.app.cache.set(code, {
+            client_id: request.query.client_id,
+            user_id: request.auth.credentials._id
+          })
+          successUrl.searchParams.set('code', code)
+          break
+        case 'token':
+          const tokenInsertResult = await tokenHandler(request.query.client_id, request.auth.credentials._id)
+          successUrl.searchParams.set('token', tokenInsertResult.ops[0].token)
+          break
+      }
       if (request.query.state) successUrl.searchParams.set('state', request.query.state)
       return h.redirect(successUrl.toString())
     }

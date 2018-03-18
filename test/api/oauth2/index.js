@@ -198,6 +198,21 @@ lab.experiment('OAuth2', () => {
     expect(responseUrl.searchParams.get('state')).to.be.equal('testState')
   })
 
+  lab.test('POST auth type token success scenario', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/oauth2/authorize?response_type=token&client_id=' + testClient._id + '&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback',
+      credentials: testUser,
+      payload: {decision: 'allow'}
+    })
+    const responseUrl = new URL(response.headers.location)
+    const testUrl = new URL(testClient.redirect_uri)
+    expect(response.statusCode).to.be.equal(302)
+    expect(responseUrl.host).to.be.equal(testUrl.host)
+    expect(responseUrl.pathname).to.be.equal(testUrl.pathname)
+    expect(responseUrl.searchParams.get('error')).to.be.null()
+  })
+
   lab.test('POST Token general validation error', async () => {
     const response = await server.inject({
       method: 'POST',

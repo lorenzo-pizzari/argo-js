@@ -179,6 +179,7 @@ lab.experiment('OAuth2', () => {
     expect(response.statusCode).to.be.equal(302)
     expect(responseUrl.host).to.be.equal(testUrl.host)
     expect(responseUrl.pathname).to.be.equal(testUrl.pathname)
+    expect(responseUrl.searchParams.get('error')).to.be.null()
     testCode = responseUrl.searchParams.get('code')
   })
 
@@ -197,7 +198,7 @@ lab.experiment('OAuth2', () => {
     expect(responseUrl.searchParams.get('state')).to.be.equal('testState')
   })
 
-  lab.test('POST Token validation error', async () => {
+  lab.test('POST Token general validation error', async () => {
     const response = await server.inject({
       method: 'POST',
       url: '/api/oauth2/token',
@@ -209,7 +210,57 @@ lab.experiment('OAuth2', () => {
       }
     })
     expect(response.statusCode).to.be.equal(400)
-    console.log(response.result)
+    expect(response.result.error).to.be.equal('invalid_request')
+  })
+
+  lab.test('POST Token grant_type error', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/oauth2/token',
+      credentials: testClient,
+      payload: {
+        redirect_uri: testClient.redirect_uri,
+        code: testCode,
+        grant_type: 'unsupportedGrant',
+        client_id: testClient._id
+      }
+    })
+    expect(response.statusCode).to.be.equal(400)
+    expect(response.result).to.be.object()
+    expect(response.result.error).to.be.equal('unsupported_grant_type')
+  })
+
+  lab.test('POST Token !client error', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/oauth2/token',
+      credentials: testClient,
+      payload: {
+        redirect_uri: testClient.redirect_uri,
+        code: 'invalidString',
+        grant_type: 'authorization_code',
+        client_id: testClient._id
+      }
+    })
+    expect(response.statusCode).to.be.equal(400)
+    expect(response.result).to.be.object()
+    expect(response.result.error).to.be.equal('invalid_grant')
+  })
+
+  lab.test('POST Token !redirect_uri error', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/oauth2/token',
+      credentials: testClient,
+      payload: {
+        redirect_uri: testClient.redirect_uri + 'wrong',
+        code: testCode,
+        grant_type: 'authorization_code',
+        client_id: testClient._id
+      }
+    })
+    expect(response.statusCode).to.be.equal(400)
+    expect(response.result).to.be.object()
     expect(response.result.error).to.be.equal('invalid_request')
   })
 

@@ -12,6 +12,8 @@ exports.plugin = {
 }
 
 async function oauthFailAction (request, h) {
+  console.log('Payload:', request.payload)
+  console.log('Query', request.query)
   const responseQuery = new URLSearchParams(request.query)
   responseQuery.append('error', 'invalid_request')
   const uri = request.query.redirect_uri
@@ -47,7 +49,7 @@ async function OAuth2Module (server, options) {
       validate: {
         payload: false,
         query: {
-          response_type: Joi.string().allow(['code']).required(),
+          response_type: Joi.string().only(['code']).required(),
           client_id: Joi.reach(Schemas.client, '_id').required(),
           redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
           scope: Joi.string(),
@@ -85,10 +87,10 @@ async function OAuth2Module (server, options) {
       auth: 'session',
       validate: {
         payload: {
-          decision: Joi.string().allow(['accept', 'deny'])
+          decision: Joi.string().only(['allow', 'deny'])
         },
         query: {
-          response_type: Joi.string().allow(['code']).required(),
+          response_type: Joi.string().only(['code']).required(),
           client_id: Joi.reach(Schemas.client, '_id').required(),
           redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
           scope: Joi.string(),
@@ -132,7 +134,7 @@ async function OAuth2Module (server, options) {
       validate: {
         query: false,
         payload: {
-          grant_type: Joi.string().allow(['authorization_code']).required(),
+          grant_type: Joi.string().only(['authorization_code']).required(),
           code: Joi.string().required(),
           redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
           client_id: Joi.reach(Schemas.client, '_id').required()
@@ -149,12 +151,12 @@ async function OAuth2Module (server, options) {
     handler: async (request, h) => {
       let code = await request.server.app.cache.get(request.payload.code)
       if (!code || code.client_id !== request.auth.credentials._id.toString()) {
-        const response = h.request({error: 'invalid_grant'})
+        const response = h.response({error: 'invalid_grant'})
         response.statusCode = 400
         return response
       }
       if (request.payload.redirect_uri !== request.auth.credentials.redirect_uri) {
-        const response = h.request({error: 'invalid_request'})
+        const response = h.response({error: 'invalid_request'})
         response.statusCode = 400
         return response
       }

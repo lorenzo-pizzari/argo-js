@@ -33,6 +33,12 @@ lab.experiment('Client Authentication', () => {
   })
 
   lab.test('should fail if client not exists', async () => {
+    const result = await validate(server, 'wrongFormat', testClient.secret)
+    expect(result.isValid).to.be.equal(false)
+    expect(result.credentials).to.be.equal(undefined)
+  })
+
+  lab.test('should fail if client not exists', async () => {
     const result = await validate(server, testClient._id.split('').reverse().join(''), testClient.secret)
     expect(result.isValid).to.be.equal(false)
     expect(result.credentials).to.be.equal(undefined)

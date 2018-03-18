@@ -15,6 +15,8 @@ let testClient = {
   redirect_uri: 'http://localhost:8000/callback'
 }
 
+let testCode
+
 lab.experiment('OAuth2', () => {
   lab.before(async () => {
     const testUserResponse = await server.inject({
@@ -22,14 +24,14 @@ lab.experiment('OAuth2', () => {
       url: '/api/user',
       payload: testUser
     })
-    testUser._id = testUserResponse.result._id.toString()
+    testUser._id = testUserResponse.result._id
     const response = await server.inject({
       method: 'POST',
       url: '/api/client',
       payload: testClient,
       credentials: testUser
     })
-    testClient._id = response.result._id.toString()
+    testClient._id = response.result._id
   })
   lab.test('GET auth should redirect to uri w/ error if validationError = true', async () => {
     const response = await server.inject({
@@ -165,7 +167,7 @@ lab.experiment('OAuth2', () => {
     expect(response.headers.location).to.be.equal('http://localhost:8000/callback?error=invalid_request&state=testState')
   })
 
-  lab.test('POST success scenario', async () => {
+  lab.test('POST auth success scenario', async () => {
     const response = await server.inject({
       method: 'POST',
       url: '/api/oauth2/authorize?response_type=code&client_id=' + testClient._id + '&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback',
@@ -177,9 +179,10 @@ lab.experiment('OAuth2', () => {
     expect(response.statusCode).to.be.equal(302)
     expect(responseUrl.host).to.be.equal(testUrl.host)
     expect(responseUrl.pathname).to.be.equal(testUrl.pathname)
+    testCode = responseUrl.searchParams.get('code')
   })
 
-  lab.test('POST success scenario w/ state', async () => {
+  lab.test('POST auth success scenario w/ state', async () => {
     const response = await server.inject({
       method: 'POST',
       url: '/api/oauth2/authorize?response_type=code&client_id=' + testClient._id + '&redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback&state=testState',
@@ -194,8 +197,41 @@ lab.experiment('OAuth2', () => {
     expect(responseUrl.searchParams.get('state')).to.be.equal('testState')
   })
 
+  lab.test('POST Token validation error', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/oauth2/token',
+      credentials: testClient,
+      payload: {
+        redirect_uri: testClient.redirect_uri,
+        grant_type: 'authorization_code',
+        client_id: testClient._id
+      }
+    })
+    expect(response.statusCode).to.be.equal(400)
+    console.log(response.result)
+    expect(response.result.error).to.be.equal('invalid_request')
+  })
+
+  lab.test('POST Token success scenario', async () => {
+    const response = await server.inject({
+      method: 'POST',
+      url: '/api/oauth2/token',
+      credentials: testClient,
+      payload: {
+        redirect_uri: testClient.redirect_uri,
+        code: testCode,
+        grant_type: 'authorization_code',
+        client_id: testClient._id
+      }
+    })
+    expect(response.statusCode).to.be.equal(200)
+    expect(response.result).to.be.object()
+  })
+
   lab.after(() => {
     server.mongo.db.collection('clients').deleteMany({name: testClient.name})
     server.mongo.db.collection('users').deleteMany({email: testUser.email})
+    server.mongo.db.collection('tokens').deleteMany({client_id: testClient._id})
   })
 })

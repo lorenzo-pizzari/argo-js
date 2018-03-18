@@ -11,9 +11,32 @@ exports.plugin = {
   register: OAuth2Module
 }
 
+async function oauthFailAction (request, h) {
+  const responseQuery = new URLSearchParams(request.query)
+  responseQuery.append('error', 'invalid_request')
+  const uri = request.query.redirect_uri
+  return h.redirect((uri || '/') + '?' + responseQuery.toString()).takeover()
+}
+
 async function OAuth2Module (server, options) {
   const db = server.mongo.db
   const ObjectID = server.mongo.ObjectID
+
+  /**
+   * Function for generating and persist access_token
+   * @param {String} clientId
+   * @param {String} userId
+   * @returns {Promise<*>}
+   */
+  async function tokenHandler (clientId, userId) {
+    return db.collection('tokens').insertOne({
+      token: randomstring(),
+      client_id: new ObjectID(clientId),
+      user_id: new ObjectID(userId),
+      createdAt: new Date(),
+      lastRefresh: new Date()
+    })
+  }
 
   server.route({
     method: 'GET',
@@ -30,12 +53,7 @@ async function OAuth2Module (server, options) {
           scope: Joi.string(),
           state: Joi.string()
         },
-        failAction: (request, h) => {
-          const responseQuery = new URLSearchParams(request.query)
-          responseQuery.append('error', 'invalid_request')
-          const uri = request.query.redirect_uri
-          return h.redirect((uri || '/') + '?' + responseQuery.toString()).takeover()
-        }
+        failAction: oauthFailAction
       }
     },
     handler: async (request, h) => {
@@ -76,12 +94,7 @@ async function OAuth2Module (server, options) {
           scope: Joi.string(),
           state: Joi.string()
         },
-        failAction: (request, h) => {
-          const responseQuery = new URLSearchParams(request.query)
-          responseQuery.append('error', 'invalid_request')
-          const uri = request.query.redirect_uri
-          return h.redirect((uri || '/') + '?' + responseQuery.toString()).takeover()
-        }
+        failAction: oauthFailAction
       }
     },
     handler: async (request, h) => {
@@ -100,13 +113,54 @@ async function OAuth2Module (server, options) {
       }
       const code = randomstring()
       await request.server.app.cache.set(code, {
-        client_id: new ObjectID(request.query.client_id),
-        user_id: new ObjectID(request.auth.credentials._id)
+        client_id: request.query.client_id,
+        user_id: request.auth.credentials._id
       })
       let successUrl = new URL(request.query.redirect_uri)
       successUrl.searchParams.set('code', code)
       if (request.query.state) successUrl.searchParams.set('state', request.query.state)
       return h.redirect(successUrl.toString())
+    }
+  })
+
+  server.route({
+    method: 'POST',
+    path: '/api/oauth2/token',
+    options: {
+      auth: 'client-basic',
+      tags: ['api', 'oauth2'],
+      validate: {
+        query: false,
+        payload: {
+          grant_type: Joi.string().allow(['authorization_code']).required(),
+          code: Joi.string().required(),
+          redirect_uri: Joi.reach(Schemas.client, 'redirect_uri').required(),
+          client_id: Joi.reach(Schemas.client, '_id').required()
+        },
+        failAction: (request, h) => {
+          let error = 'invalid_request'
+          if (request.payload.grant_type !== 'authorization_code') error = 'unsupported_grant_type'
+          const response = h.response({error: error})
+          response.statusCode = 400
+          return response.takeover()
+        }
+      }
+    },
+    handler: async (request, h) => {
+      let code = await request.server.app.cache.get(request.payload.code)
+      if (!code || code.client_id !== request.auth.credentials._id.toString()) {
+        const response = h.request({error: 'invalid_grant'})
+        response.statusCode = 400
+        return response
+      }
+      if (request.payload.redirect_uri !== request.auth.credentials.redirect_uri) {
+        const response = h.request({error: 'invalid_request'})
+        response.statusCode = 400
+        return response
+      }
+      const tokenInsertResult = await tokenHandler(code.client_id, code.user_id)
+      // TODO Set Token Expire
+      return {access_token: tokenInsertResult.ops[0].token, token_type: 'bearer', expires_in: 0}
     }
   })
 }

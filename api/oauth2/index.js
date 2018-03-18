@@ -148,7 +148,7 @@ async function OAuth2Module (server, options) {
         }),
         failAction: (request, h) => {
           let error = 'invalid_request'
-          if (request.payload.grant_type !== 'authorization_code' ||
+          if (request.payload.grant_type !== 'authorization_code' &&
             request.payload.grant_type !== 'password') error = 'unsupported_grant_type'
           const response = h.response({error: error})
           response.statusCode = 400

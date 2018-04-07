@@ -40,7 +40,7 @@ lab.experiment('OAuth2', () => {
       credentials: testUser
     })
     expect(response.statusCode).to.be.equal(302)
-    expect(response.headers.location).to.be.equal('http://localhost:8000/callback?redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback&error=invalid_request')
+    expect(response.headers.location).to.be.equal('http://localhost:8000/callback?error=invalid_request')
   })
 
   lab.test('GET auth should redirect to home if !redirect_uri', async () => {
@@ -110,7 +110,7 @@ lab.experiment('OAuth2', () => {
       payload: {decision: 'accept'}
     })
     expect(response.statusCode).to.be.equal(302)
-    expect(response.headers.location).to.be.equal('http://localhost:8000/callback?redirect_uri=http%3A%2F%2Flocalhost%3A8000%2Fcallback&error=invalid_request')
+    expect(response.headers.location).to.be.equal('http://localhost:8000/callback?error=invalid_request')
   })
 
   lab.test('POST auth should redirect to home if !redirect_uri', async () => {

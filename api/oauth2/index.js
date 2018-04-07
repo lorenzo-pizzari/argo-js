@@ -3,6 +3,7 @@ const randomstring = require('randomstring').generate
 const URLSearchParams = require('url').URLSearchParams
 const URL = require('url').URL
 const Schemas = require('../../Schemas')
+const userAuth = require('../../auth/basic')
 
 exports.plugin = {
   name: 'oauth2',
@@ -11,11 +12,22 @@ exports.plugin = {
   register: OAuth2Module
 }
 
-async function oauthFailAction (request, h) {
-  console.log('Payload:', request.payload)
-  console.log('Query', request.query)
-  const responseQuery = new URLSearchParams(request.query)
-  responseQuery.append('error', 'invalid_request')
+/**
+ *
+ * @param {Request} request
+ * @param h
+ * @param {String} [error=invalid_request]
+ * @returns {Promise<*>}
+ */
+async function oauthFailAction (request, h, error) {
+  if (typeof error !== 'string') error = 'invalid_request'
+  const requestQuery = new URLSearchParams(request.query)
+  const responseQuery = new URLSearchParams()
+  responseQuery.append('error', error)
+  const state = requestQuery.get('state')
+  if (state) {
+    responseQuery.append('state', state)
+  }
   const uri = request.query.redirect_uri
   return h.redirect((uri || '/') + '?' + responseQuery.toString()).takeover()
 }
@@ -63,16 +75,10 @@ async function OAuth2Module (server, options) {
     handler: async (request, h) => {
       const client = await db.collection('clients').findOne({_id: new ObjectID(request.query.client_id)})
       if (!client) {
-        let redirection = new URL(request.query.redirect_uri)
-        redirection.searchParams.append('error', 'invalid_request')
-        if (request.query.state) redirection.searchParams.append('state', request.query.state)
-        return h.redirect(redirection.toString())
+        return oauthFailAction(request, h)
       }
       if (client.redirect_uri !== request.query.redirect_uri) {
-        let redirection = new URL(request.query.redirect_uri)
-        redirection.searchParams.append('error', 'invalid_request')
-        if (request.query.state) redirection.searchParams.append('state', request.query.state)
-        return h.redirect(redirection.toString())
+        return oauthFailAction(request, h)
       }
       return h.view('oauth_decision', {query: request.query, credentials: request.auth.credentials, client: client})
     }
@@ -93,17 +99,11 @@ async function OAuth2Module (server, options) {
     },
     handler: async (request, h) => {
       if (request.payload.decision === 'deny') {
-        let redirection = new URL(request.query.redirect_uri)
-        redirection.searchParams.append('error', 'access_denied')
-        if (request.query.state) redirection.searchParams.append('state', request.query.state)
-        return h.redirect(redirection.toString())
+        return oauthFailAction(request, h, 'access_denied')
       }
       const client = await db.collection('clients').findOne({_id: new ObjectID(request.query.client_id)})
       if (!client) {
-        let redirection = new URL(request.query.redirect_uri)
-        redirection.searchParams.append('error', 'invalid_request')
-        if (request.query.state) redirection.searchParams.append('state', request.query.state)
-        return h.redirect(redirection.toString())
+        return oauthFailAction(request, h)
       }
       let successUrl = new URL(request.query.redirect_uri)
       switch (request.query.response_type) {
@@ -174,8 +174,14 @@ async function OAuth2Module (server, options) {
           tokenInsertResult = await tokenHandler(code.client_id, code.user_id)
           break
         case 'password':
-          // TODO Check username and password
-          // TODO Call tokenHandler w/ user._id as client_id
+          const user = await userAuth.validate(request, request.payload.username, request.payload.password)
+          if (user.isValid) {
+            tokenInsertResult = await tokenHandler(request.auth.credentials._id, user.credentials._id)
+          } else {
+            const response = h.response({error: 'invalid_client'})
+            response.statusCode = 401
+            return response
+          }
           break
       }
       // TODO Set Token Expire
